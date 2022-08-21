@@ -7,7 +7,7 @@ on:
     - cron: '0 22 * * *'  # every day at 22:00 UTC
 
 env:
-  rust_toolchain: nightly-2022-07-20
+  rust_toolchain: nightly-2022-08-05
   qemu_version: 7.0.0
 
 jobs:
@@ -64,10 +64,7 @@ jobs:
           components: rust-src, llvm-tools-preview
 
       - name: Pull prebuilt images
-        run: |
-          git lfs pull -I prebuilt/zircon/x64/core-tests.zbi
-          git lfs pull -I prebuilt/zircon/x64/libzircon-libos.so
-          git lfs pull -I prebuilt/zircon/x64/userboot-libos.so
+        run: make setup
 
       - name: Install python dependencies
         run: pip3 install -r tests/requirements.txt
@@ -95,10 +92,7 @@ jobs:
           components: rust-src, llvm-tools-preview
 
       - name: Pull prebuilt images
-        run: |
-          git lfs pull -I prebuilt/zircon/x64/core-tests.zbi
-          git lfs pull -I prebuilt/zircon/x64/libzircon.so
-          git lfs pull -I prebuilt/zircon/x64/userboot.so
+        run: make setup
 
       - name: Cache QEMU
         id: cache-qemu
@@ -143,12 +137,6 @@ jobs:
           profile: minimal
           toolchain: ${{ env.rust_toolchain }}
           components: rust-src, llvm-tools-preview
-
-      - name: Cache musl toolchain
-        uses: actions/cache@v3
-        with:
-          path: ignored/origin/archs/x86_64/x86_64-linux-musl-cross.tgz
-          key: x86_64-linux-musl-cross
 
       - name: Prepare rootfs
         run: cargo xtask libos-libc-test
@@ -200,12 +188,6 @@ jobs:
         run: |
           cd qemu-${{ env.qemu_version }} && sudo make install
           qemu-system-${{ matrix.arch }} --version
-
-      - name: Cache musl toolchain
-        uses: actions/cache@v3
-        with:
-          path: ignored/origin/archs/${{ matrix.arch }}/${{ matrix.arch }}-linux-musl-cross.tgz
-          key: ${{ matrix.arch }}-linux-musl-cross
 
       - name: Prepare rootfs
         run: cargo libc-test --arch ${{ matrix.arch }} && cargo image --arch ${{ matrix.arch }}
@@ -263,12 +245,6 @@ jobs:
         run: |
           cd qemu-${{ env.qemu_version }} && sudo make install
           qemu-system-${{ matrix.arch }} --version
-
-      - name: Cache musl toolchain
-        uses: actions/cache@v3
-        with:
-          path: ignored/origin/archs/${{ matrix.arch }}/${{ matrix.arch }}-linux-musl-cross.tgz
-          key: ${{ matrix.arch }}-linux-musl-cross
 
       - name: Prepare rootfs
         run: cargo other-test --arch ${{ matrix.arch }} && cargo image --arch ${{ matrix.arch }}
